@@ -1,5 +1,6 @@
 mod aoc01;
+mod aoc02;
 
 fn main() {
-    crate::aoc01::part2();
+    crate::aoc02::part2();
 }
