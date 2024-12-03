@@ -43,7 +43,9 @@ pub fn part1() {
 }
 
 pub fn part2() {
-    let (first, second) = parsing();
+    let (mut first, mut second) = parsing();
+    first.sort();
+    second.sort();
 
     let mut map: HashMap<i32, i32> = HashMap::new();
 

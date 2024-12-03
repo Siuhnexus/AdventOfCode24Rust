@@ -2,7 +2,7 @@ use std::fs;
 use std::ops::RangeInclusive;
 
 fn parse() -> Vec<Vec<i32>> {
-    let message: String = match fs::read_to_string("input/02_1.txt") {
+    let message: String = match fs::read_to_string("input/02.txt") {
         Err(_e) => panic!("No input file found"),
         Ok(v) => v
     };
