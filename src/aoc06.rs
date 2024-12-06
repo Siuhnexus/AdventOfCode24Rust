@@ -1,4 +1,4 @@
-use std::{fs, num::TryFromIntError, collections::HashMap};
+use std::{fs, num::TryFromIntError, collections::HashSet};
 
 fn addtosize(a: usize, b: i32) -> Result<usize, TryFromIntError> {
     let newval = match i32::try_from(a) { Err(e) => return Err(e), Ok(v) => v } + b;
@@ -69,7 +69,7 @@ pub fn part2() {
             grid[y][x] = true;
             let mut pos = startingpos.clone();
             let mut dir = startingdir.clone();
-            let mut encountered: HashMap<((usize, usize), (i32, i32)), bool> = HashMap::new();
+            let mut encountered: HashSet<((usize, usize), (i32, i32))> = HashSet::new();
 
             let mut loops = false;
             loop {
@@ -80,11 +80,11 @@ pub fn part2() {
                     Some(v) => v
                 }};
                 if nexttile == &true {
-                    if encountered.contains_key(&(pos, dir)) {
+                    if encountered.contains(&(pos, dir)) {
                         loops = true;
                         break;
                     }
-                    encountered.insert((pos, dir), true);
+                    encountered.insert((pos, dir));
                     dir = (-dir.1, dir.0);
                     continue;
                 }
