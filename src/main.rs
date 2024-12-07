@@ -4,7 +4,8 @@ mod aoc03;
 mod aoc04;
 mod aoc05;
 mod aoc06;
+mod aoc07;
 
 fn main() {
-    crate::aoc06::part2();
+    crate::aoc07::part2();
 }
