@@ -28,6 +28,10 @@ fn parse() -> (HashMap<char, Vec<(u32, u32)>>, (usize, usize)) {
     return (result, (xlen, ylen));
 }
 
+fn printmap(nodes: &Vec<Vec<bool>>) {
+    println!("{}", nodes.iter().fold(String::from(""), |prev, row| { prev + &row.iter().fold(String::from(""), |prev, v| { prev + if *v { "#" } else { "." } }) + "\n" }) + "\n");
+}
+
 pub fn part1() {
     let (result, dimensions) = parse();
     let mut nodes: Vec<Vec<bool>> = Vec::new();
@@ -57,8 +61,6 @@ pub fn part2() {
         nodes.push((0..dimensions.1).map(|_y| -> bool { false }).collect());
     }
 
-    let mut printed = false;
-
     for (_key, positions) in result {
         for i in 0..positions.len() {
             let first = positions[i];
@@ -67,11 +69,11 @@ pub fn part2() {
                 let diff = (second.0 as i32 - first.0 as i32, second.1 as i32 - first.1 as i32);
                 let mut k = u32::MAX;
                 if diff.0 != 0 {
-                    let bound = if diff.0 > 0 { 0 } else { dimensions.0 } as u32;
+                    let bound = if diff.0 > 0 { 0 } else { dimensions.0 - 1 } as u32;
                     k = k.min(((first.0 as i32 - bound as i32) / diff.0) as u32);
                 }
                 if diff.1 != 0 {
-                    let bound = if diff.1 > 0 { 0 } else { dimensions.1 } as u32;
+                    let bound = if diff.1 > 0 { 0 } else { dimensions.1 - 1 } as u32;
                     k = k.min(((first.1 as i32 - bound as i32) / diff.1) as u32);
                 }
                 let mut start = (first.0 as i32 - k as i32 * diff.0, first.1 as i32 - k as i32 * diff.1);
@@ -79,13 +81,9 @@ pub fn part2() {
                     nodes[start.0 as usize][start.1 as usize] = true;
                     start = (start.0 + diff.0, start.1 + diff.1);
                 }
-
-                if !printed {
-                    println!("{}", nodes.iter().fold(String::from(""), |prev, row| { prev + &row.iter().fold(String::from(""), |prev, v| { prev + if *v { "#" } else { "." } }) + "\n" }) + "\n");
-                    printed = true;
-                }
             }
         }
     }
+
     println!("{:?}", nodes.iter().fold(0, |prev, row| -> u32 { prev + row.iter().fold(0, |prev, v| -> u32 { prev + if *v { 1 } else { 0 } }) }))
 }
