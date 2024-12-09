@@ -73,8 +73,8 @@ pub fn part1() {
 }
 
 fn check2(field: &Vec<Vec<char>>, position: (usize, usize)) -> bool {
-    let mut x = position.0;
-    let mut y = position.1;
+    let x = position.0;
+    let y = position.1;
 
     let armcharsresult: Result<Vec<char>, &str> = (0..=3).map(|dir| -> Result<char, &str> {
         let dx = (dir / 2) * 2 - 1;

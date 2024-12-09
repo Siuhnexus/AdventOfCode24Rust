@@ -32,7 +32,7 @@ pub fn part1() {
     let (grid, mut pos, mut dir) = parse();
     let mut visited: Vec<Vec<bool>> = Vec::new();
     for (y, row) in (&grid).iter().enumerate() {
-        let mut vrow: Vec<bool> = (0..row.len()).map(|n| -> bool { return false; }).collect();
+        let mut vrow: Vec<bool> = (0..row.len()).map(|_n| -> bool { return false; }).collect();
         if y == pos.1 {
             vrow[pos.0] = true;
         }

@@ -28,7 +28,7 @@ fn parse() -> (HashMap<char, Vec<(u32, u32)>>, (usize, usize)) {
     return (result, (xlen, ylen));
 }
 
-fn printmap(nodes: &Vec<Vec<bool>>) {
+fn _printmap(nodes: &Vec<Vec<bool>>) {
     println!("{}", nodes.iter().fold(String::from(""), |prev, row| { prev + &row.iter().fold(String::from(""), |prev, v| { prev + if *v { "#" } else { "." } }) + "\n" }) + "\n");
 }
 

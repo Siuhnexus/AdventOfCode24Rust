@@ -60,7 +60,6 @@ pub fn part1() {
 }
 
 fn tryshorter(report: &Vec<i32>, totest: RangeInclusive<usize>) -> bool {
-    let mut newmethod: bool = false;
     for i in totest {
         let mut variant = report.clone();
         variant.remove(i);

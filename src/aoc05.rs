@@ -72,7 +72,7 @@ fn sortfaster(rules: &Vec<(u32, u32)>, page: &mut Vec<u32>) {
         return match activerules.get(a) { None => Ordering::Equal, Some(v) => match v.get(b) { None => Ordering::Equal, Some(v) => v.clone() } };
     })
 }
-fn sort(rules: &Vec<(u32, u32)>, page: &mut Vec<u32>) {
+fn _sort(rules: &Vec<(u32, u32)>, page: &mut Vec<u32>) {
     let mut activerules: Vec<(u32, u32)> = Vec::new();
     for rule in rules {
         if page.contains(&rule.0) && page.contains(&rule.1) {
