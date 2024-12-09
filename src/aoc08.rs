@@ -13,16 +13,7 @@ fn parse() -> (HashMap<char, Vec<(u32, u32)>>, (usize, usize)) {
         xlen = x + 1;
         for (y, c) in line.chars().enumerate() {
             if !c.is_alphanumeric() { continue; }
-            match result.get_mut(&c) {
-                None => {
-                    let mut group = Vec::new();
-                    group.push((x as u32, y as u32));
-                    result.insert(c, group);
-                },
-                Some(v) => {
-                    v.push((x as u32, y as u32));
-                }
-            }
+            result.entry(c).or_insert(Vec::new()).push((x as u32, y as u32));
         }
     }
     return (result, (xlen, ylen));
