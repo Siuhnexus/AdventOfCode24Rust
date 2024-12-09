@@ -21,7 +21,7 @@ fn parse() -> Vec<Option<u16>> {
 }
 
 fn printresult(result: Vec<Option<u16>>) {
-    println!("{:?}", result.iter().fold(String::from(""), |prev: String, v| { let result = match v { None => String::from("."), Some(v) => v.to_string() }; format!("{prev}{result}")}));
+    println!("{:?}", result.iter().fold(String::from(""), |prev: String, v| { prev + &(match v { None => String::from("."), Some(v) => v.to_string() })}));
     println!("{:?}", result.iter().enumerate().fold(0, |prev, (i, v)| {
         prev + (i as u64) * match v { None => 0, Some(val) => *val as u64 }
     }))
