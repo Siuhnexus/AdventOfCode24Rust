@@ -147,30 +147,6 @@ pub fn part1() {
     println!("{}", costs);
 }
 
-fn printedges(walked: Vec<((u16, u16), (u16, u16))>) {
-    println!("{}", (0..7).fold(String::new(), |prev, y| { prev + &(0..7).fold(String::new(), |prev, x| {
-        let hashorizontal = |(f, s): (&(u16, u16), &(u16, u16))| -> bool { (*f == (x, y) && *s == (x + 1, y)) || (*f == (x + 1, y) && *s == (x, y)) || x > 0 && ((*f == (x, y) && *s == (x - 1, y)) || (*f == (x - 1, y) && *s == (x, y))) };
-        let hasvertical = |(f, s): (&(u16, u16), &(u16, u16))| (*f == (x, y) && *s == (x, y + 1)) || (*f == (x, y + 1) && *s == (x, y)) || y > 0 && ((*f == (x, y) && *s == (x, y - 1)) || (*f == (x, y - 1) && *s == (x, y)));
-        prev + match (walked.iter().find(|(f, s)| hashorizontal((f, s))), walked.iter().find(|(f, s)| hasvertical((f, s)))) {
-            (None, None) => ".",
-            (None, Some(_)) => "|",
-            (Some(_), None) => "-",
-            (Some(_), Some(_)) => "+"
-        }
-    }) + "\n" }));
-}
-fn iscontinuous(walked: &mut Vec<((u16, u16), (u16, u16))>) -> bool {
-    let first = walked[0];
-    let mut current = first;
-    while walked.len() > 0 {
-        current = match walked.iter().find(|(f, s)| { let v = vec![*f, *s]; v.contains(&current.0) || v.contains(&current.1) }) {
-            None => return false,
-            Some(v) => { *v }
-        };
-        walked.remove(walked.iter().position(|(f, s)| f == &current.0 && s == &current.1).unwrap());
-    }
-    return { let v = vec![first.0, first.1]; v.contains(&current.0) || v.contains(&current.1) };
-}
 pub fn part2() {
     let mut map = parse();
     let mut costs: u32 = 0;
@@ -217,10 +193,6 @@ pub fn part2() {
                 prevorientation = orientation;
             }
             if prevorientation == firstorientation { edgecount -= 1; }
-
-            if !iscontinuous(&mut walked.clone()) { printedges(walked); println!("{id}"); panic!("WARNING: Non-closing border detected"); }
-            //printedges(walked);
-            //println!("{}", edgecount);
 
             edgetotal += edgecount;
         }
