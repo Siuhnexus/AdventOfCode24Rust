@@ -10,37 +10,6 @@ fn parse() -> Vec<u64> {
     result
 }
 
-pub fn part1() {
-    let mut stones = parse();
-    for _n in 0..75 {
-        let mut i = 0;
-        while i < stones.len() {
-            let stone = stones[i];
-            if stone == 0 { stones[i] = 1; i += 1; continue; }
-            let numlen = (stone as f64).log10().floor() as u8;
-            if numlen % 2 == 1 {
-                let cuttable = stone.to_string();
-                let mut first = String::new();
-                let mut second = String::new();
-                for (j, c) in cuttable.chars().enumerate() {
-                    if j < cuttable.len() / 2 {
-                        first += &c.to_string();
-                    }
-                    else {
-                        second += &c.to_string();
-                    }
-                }
-                stones.splice(i..=i, [first.parse::<u64>().expect("Splitting produced an unexpected error"), second.parse::<u64>().expect("Splitting produced an unexpected error")]);
-                i += 2;
-                continue;
-            }
-            stones[i] *= 2024;
-            i += 1;
-        }
-    }
-    println!("{}", stones.len());
-}
-
 fn splitnum(value: u64) -> (u64, u64) {
     let cuttable = value.to_string();
     let mut first = String::new();
@@ -56,6 +25,28 @@ fn splitnum(value: u64) -> (u64, u64) {
     let nums = (first.parse::<u64>().expect("Splitting produced an unexpected error"), second.parse::<u64>().expect("Splitting produced an unexpected error"));
     nums
 }
+
+pub fn part1() {
+    let mut stones = parse();
+    for _n in 0..75 {
+        let mut i = 0;
+        while i < stones.len() {
+            let stone = stones[i];
+            if stone == 0 { stones[i] = 1; i += 1; continue; }
+            let numlen = (stone as f64).log10().floor() as u8;
+            if numlen % 2 == 1 {
+                let nums = splitnum(stone);
+                stones.splice(i..=i, [nums.0, nums.1]);
+                i += 2;
+                continue;
+            }
+            stones[i] *= 2024;
+            i += 1;
+        }
+    }
+    println!("{}", stones.len());
+}
+
 pub fn stonesafter(stone: u64, n: u8, memo: &mut HashMap<(u64, u8), u64>) -> u64 {
     match memo.get(&(stone, n)) {
         Some(v) => *v,
