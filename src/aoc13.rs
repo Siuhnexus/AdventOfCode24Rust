@@ -1,4 +1,6 @@
-use std::{fs, ops::{Add, AddAssign}};
+use std::fs;
+
+use crate::helpers::{lcm, Wrapped};
 
 #[derive(Debug)]
 struct SlotMachine {
@@ -63,77 +65,6 @@ pub fn part1() {
     }
 
     println!("{tokens}");
-}
-
-#[derive(Clone)]
-pub struct Wrapped {
-    max: u64,
-    value: u64
-}
-
-impl Wrapped {
-    pub fn from(value: u64, max: u64) -> Self {
-        Wrapped { value: value % max, max }
-    }
-
-    pub fn additions_until_target(&self, summand: u64, target: u64) -> Option<u64> {
-        if summand % self.max == 0 { return if target == self.value { Some(0) } else { None } }
-        let mut current = self.clone();
-        let mut count = 0;
-        loop {
-            if current.value == target { return Some(count); }
-
-            count += 1;
-            current += summand;
-
-            if current.value == self.value { return None; }
-        };
-    }
-    pub fn additions_until_loop(&self, summand: u64) -> u64 {
-        let mut current = self.clone();
-        let mut count = 0;
-        loop {
-            count += 1;
-            current += summand;
-
-            if current.value == self.value { return count; }
-        }
-    }
-}
-impl Add for Wrapped {
-    type Output = Wrapped;
-    
-    fn add(self, rhs: Self) -> Wrapped {
-        Wrapped { value: (self.value + rhs.value) % self.max, max: self.max }
-    }
-}
-impl Add<u64> for Wrapped {
-    type Output = Wrapped;
-    
-    fn add(self, rhs: u64) -> Wrapped {
-        Wrapped { value: (self.value + rhs) % self.max, max: self.max }
-    }
-}
-impl AddAssign for Wrapped {
-    fn add_assign(&mut self, rhs: Self) {
-        self.value = (self.value + rhs.value) % self.max;
-    }
-}
-impl AddAssign<u64> for Wrapped {
-    fn add_assign(&mut self, rhs: u64) {
-        self.value = (self.value + rhs) % self.max;
-    }
-}
-
-fn gcd(mut a: u64, mut b: u64) -> u64 {
-    if b == 0 { return a }
-    let temp = a;
-    a = b;
-    b = temp % b;
-    gcd(a, b)
-}
-fn lcm(a: u64, b: u64) -> u64 {
-    a * b / gcd(a, b)
 }
 
 pub fn part2() {
