@@ -1,16 +1,16 @@
-use std::fs;
+use std::{fs, ops::{Add, AddAssign}};
 
 #[derive(Debug)]
 struct SlotMachine {
-    a: (u32, u32),
-    b: (u32, u32),
-    prize: (u32, u32)
+    a: (u64, u64),
+    b: (u64, u64),
+    prize: (u64, u64)
 }
 
 fn parse() -> Vec<SlotMachine> {
     let mut result = Vec::new();
-    let mut ca: Option<(u32, u32)> = None;
-    let mut cb: Option<(u32, u32)> = None;
+    let mut ca: Option<(u64, u64)> = None;
+    let mut cb: Option<(u64, u64)> = None;
     for line in fs::read_to_string("input/13.txt").expect("Input file not found").lines() {
         if line.trim() == "" { ca = None; cb = None; continue; }
         match line.starts_with("Button") {
@@ -20,10 +20,10 @@ fn parse() -> Vec<SlotMachine> {
                 let numvals: Vec<&str> = shortened.split(", Y+").collect();
                 if numvals.len() != 2 { panic!("Input file was formatted incorrectly") }
                 if isfirst {
-                    ca = Some((numvals[0].parse::<u32>().expect("Non-number in input"), numvals[1].parse::<u32>().expect("Non-number in input")))
+                    ca = Some((numvals[0].parse::<u64>().expect("Non-number in input"), numvals[1].parse::<u64>().expect("Non-number in input")))
                 }
                 else {
-                    cb = Some((numvals[0].parse::<u32>().expect("Non-number in input"), numvals[1].parse::<u32>().expect("Non-number in input")))
+                    cb = Some((numvals[0].parse::<u64>().expect("Non-number in input"), numvals[1].parse::<u64>().expect("Non-number in input")))
                 }
             },
             false => {
@@ -33,7 +33,7 @@ fn parse() -> Vec<SlotMachine> {
                 result.push(SlotMachine {
                     a: ca.unwrap(),
                     b: cb.unwrap(),
-                    prize: (numvals[0].parse::<u32>().expect("Non-number in input"), numvals[1].parse::<u32>().expect("Non-number in input"))
+                    prize: (numvals[0].parse::<u64>().expect("Non-number in input"), numvals[1].parse::<u64>().expect("Non-number in input"))
                 })
             }
         }
@@ -43,8 +43,8 @@ fn parse() -> Vec<SlotMachine> {
 
 pub fn part1() {
     let machines = parse();
-    let mut tokens: u32 = 0;
-    
+    let mut tokens: u64 = 0;
+
     for machine in machines {
         let mut possibilities: Vec<(u8, u8)> = Vec::new();
         for i in 1..101 {
@@ -58,8 +58,151 @@ pub fn part1() {
         }
 
         if possibilities.len() == 0 { continue; }
-        possibilities.sort_by_key(|(a, b)| (*a as i32) * (-3) - (*b as i32));
-        tokens += possibilities[0].0 as u32 * 3 + possibilities[0].1 as u32;
+        possibilities.sort_by_key(|(a, b)| (*a as i32) * 3 + (*b as i32));
+        tokens += possibilities[0].0 as u64 * 3 + possibilities[0].1 as u64;
+    }
+
+    println!("{tokens}");
+}
+
+#[derive(Clone)]
+pub struct Wrapped {
+    max: u64,
+    value: u64
+}
+
+impl Wrapped {
+    pub fn from(value: u64, max: u64) -> Self {
+        Wrapped { value: value % max, max }
+    }
+
+    pub fn additions_until_target(&self, summand: u64, target: u64) -> Option<u64> {
+        if summand % self.max == 0 { return if target == self.value { Some(0) } else { None } }
+        let mut current = self.clone();
+        let mut count = 0;
+        loop {
+            if current.value == target { return Some(count); }
+
+            count += 1;
+            current += summand;
+
+            if current.value == self.value { return None; }
+        };
+    }
+    pub fn additions_until_loop(&self, summand: u64) -> u64 {
+        let mut current = self.clone();
+        let mut count = 0;
+        loop {
+            count += 1;
+            current += summand;
+
+            if current.value == self.value { return count; }
+        }
+    }
+}
+impl Add for Wrapped {
+    type Output = Wrapped;
+    
+    fn add(self, rhs: Self) -> Wrapped {
+        Wrapped { value: (self.value + rhs.value) % self.max, max: self.max }
+    }
+}
+impl Add<u64> for Wrapped {
+    type Output = Wrapped;
+    
+    fn add(self, rhs: u64) -> Wrapped {
+        Wrapped { value: (self.value + rhs) % self.max, max: self.max }
+    }
+}
+impl AddAssign for Wrapped {
+    fn add_assign(&mut self, rhs: Self) {
+        self.value = (self.value + rhs.value) % self.max;
+    }
+}
+impl AddAssign<u64> for Wrapped {
+    fn add_assign(&mut self, rhs: u64) {
+        self.value = (self.value + rhs) % self.max;
+    }
+}
+
+fn gcd(mut a: u64, mut b: u64) -> u64 {
+    if b == 0 { return a }
+    let temp = a;
+    a = b;
+    b = temp % b;
+    gcd(a, b)
+}
+fn lcm(a: u64, b: u64) -> u64 {
+    a * b / gcd(a, b)
+}
+
+pub fn part2() {
+    let machines = parse();
+    let mut tokens: u64 = 0;
+
+    for machine in machines {
+        println!("Next machine");
+        let (a, b, prize) = (machine.a, machine.b, (machine.prize.0 + 10000000000000, machine.prize.1 + 10000000000000));
+
+        let mut possibilities: Vec<(u64, u64)> = Vec::new();
+        
+        let xtarget = Wrapped::from(prize.0, a.0);
+        let ytarget = Wrapped::from(prize.1, a.1);
+        
+        let xfirstlineup = match (Wrapped { value: 0, max: xtarget.max }).additions_until_target(b.0, xtarget.value) {
+            None => continue,
+            Some(v) => v
+        };
+        let yfirstlineup = match (Wrapped { value: 0, max: ytarget.max }).additions_until_target(b.1,ytarget.value) {
+            None => continue,
+            Some(v) => v
+        };
+        let xroundtrip = xtarget.additions_until_loop(b.0);
+        let yroundtrip = ytarget.additions_until_loop(b.1);
+        // (a - c + kb) / d = j
+        let mut firstlineup = if xfirstlineup > yfirstlineup {
+            match Wrapped::from(xfirstlineup - yfirstlineup, yroundtrip).additions_until_target(xroundtrip, 0) {
+                None => continue,
+                Some(v) => xfirstlineup + v * xroundtrip
+            }
+        }
+        else {
+            match Wrapped::from(yfirstlineup - xfirstlineup, xroundtrip).additions_until_target(yroundtrip, 0) {
+                None => continue,
+                Some(v) => yfirstlineup + v * yroundtrip
+            }
+        };
+        let roundtrip = lcm(xroundtrip, yroundtrip);
+        let mut current = (b.0 * firstlineup, b.1 * firstlineup);
+        if current.0 > prize.0 || current.1 > prize.1 { continue; }
+        let mut diff = ((prize.0 - current.0) / a.0) as i64 - ((prize.1 - current.1) / a.1) as i64;
+        if diff != 0 {
+            let next = (b.0 * (firstlineup + roundtrip), b.1 * (firstlineup + roundtrip));
+            if next.0 > prize.0 || next.1 > prize.1 { continue; }
+            let mut nextdiff = ((prize.0 - next.0) / a.0) as i64 - ((prize.1 - next.1) / a.1) as i64;
+            if diff.signum() != nextdiff.signum() { continue; }
+            diff = diff.abs();
+            nextdiff = nextdiff.abs();
+            if nextdiff >= diff || diff % (diff - nextdiff) != 0 { continue; }
+            firstlineup += (diff / (diff - nextdiff)) as u64 * roundtrip;
+            current = (b.0 * firstlineup, b.1 * firstlineup);
+            if current.0 > prize.0 || current.1 > prize.1 { continue; }
+        }
+
+        //println!("{} ?= {}, {} ?= {}", Wrapped::from(current.0, a.0).value, xtarget.value, Wrapped::from(current.1, a.1).value, ytarget.value);        
+        let left = (prize.0 - current.0) / a.0;
+        if (current.0 + left * a.0) != prize.0 || (current.1 + left * a.1) != prize.1 { continue; }
+        possibilities.push((left, firstlineup));
+        let roundtrip = lcm(xroundtrip, yroundtrip);
+        let lastlineup = firstlineup + ((prize.0 - current.0) / (b.0 * roundtrip)) * roundtrip;
+        current = (b.0 * lastlineup, b.1 * lastlineup);
+        let left = (prize.0 - current.0) / a.0;
+        if (current.0 + left * a.0) == prize.0 && (current.1 + left * a.1) == prize.1 { possibilities.push((left, lastlineup)); }
+        if possibilities.len() == 0 { continue; }
+        
+        possibilities.sort_by_key(|(a, b)| (*a as i64) * 3 + (*b as i64));
+        println!("{:?}", possibilities);
+        tokens += possibilities[0].0 as u64 * 3 + possibilities[0].1 as u64;
     }
 
     println!("{tokens}");
