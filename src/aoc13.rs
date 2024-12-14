@@ -72,7 +72,6 @@ pub fn part2() {
     let mut tokens: u64 = 0;
 
     for machine in machines {
-        println!("Next machine");
         let (a, b, prize) = (machine.a, machine.b, (machine.prize.0 + 10000000000000, machine.prize.1 + 10000000000000));
 
         let mut possibilities: Vec<(u64, u64)> = Vec::new();
@@ -90,6 +89,8 @@ pub fn part2() {
         };
         let xroundtrip = xtarget.additions_until_loop(b.0);
         let yroundtrip = ytarget.additions_until_loop(b.1);
+        // a + kb = c + jd
+        // a - c + kb = jd
         // (a - c + kb) / d = j
         let mut firstlineup = if xfirstlineup > yfirstlineup {
             match Wrapped::from(xfirstlineup - yfirstlineup, yroundtrip).additions_until_target(xroundtrip, 0) {
@@ -106,33 +107,28 @@ pub fn part2() {
         let roundtrip = lcm(xroundtrip, yroundtrip);
         let mut current = (b.0 * firstlineup, b.1 * firstlineup);
         if current.0 > prize.0 || current.1 > prize.1 { continue; }
+        let mut diffdiff = (b.0 * roundtrip / a.0) as i64 - (b.1 * roundtrip / a.1) as i64;
         let mut diff = ((prize.0 - current.0) / a.0) as i64 - ((prize.1 - current.1) / a.1) as i64;
         if diff != 0 {
-            let next = (b.0 * (firstlineup + roundtrip), b.1 * (firstlineup + roundtrip));
-            if next.0 > prize.0 || next.1 > prize.1 { continue; }
-            let mut nextdiff = ((prize.0 - next.0) / a.0) as i64 - ((prize.1 - next.1) / a.1) as i64;
-            if diff.signum() != nextdiff.signum() { continue; }
+            if diff.signum() != diffdiff.signum() { continue; }
             diff = diff.abs();
-            nextdiff = nextdiff.abs();
-            if nextdiff >= diff || diff % (diff - nextdiff) != 0 { continue; }
-            firstlineup += (diff / (diff - nextdiff)) as u64 * roundtrip;
+            diffdiff = diffdiff.abs();
+            if diffdiff > diff || diff % diffdiff != 0 { continue; }
+            firstlineup += (diff / diffdiff) as u64 * roundtrip;
             current = (b.0 * firstlineup, b.1 * firstlineup);
             if current.0 > prize.0 || current.1 > prize.1 { continue; }
         }
 
-        //println!("{} ?= {}, {} ?= {}", Wrapped::from(current.0, a.0).value, xtarget.value, Wrapped::from(current.1, a.1).value, ytarget.value);        
         let left = (prize.0 - current.0) / a.0;
-        if (current.0 + left * a.0) != prize.0 || (current.1 + left * a.1) != prize.1 { continue; }
         possibilities.push((left, firstlineup));
-        let roundtrip = lcm(xroundtrip, yroundtrip);
-        let lastlineup = firstlineup + ((prize.0 - current.0) / (b.0 * roundtrip)) * roundtrip;
-        current = (b.0 * lastlineup, b.1 * lastlineup);
-        let left = (prize.0 - current.0) / a.0;
-        if (current.0 + left * a.0) == prize.0 && (current.1 + left * a.1) == prize.1 { possibilities.push((left, lastlineup)); }
-        if possibilities.len() == 0 { continue; }
         
+        if diffdiff == 0 {
+            let lastlineup = firstlineup + ((prize.0 - current.0) / (b.0 * roundtrip)) * roundtrip;
+            possibilities.push(((prize.0 - b.0 * lastlineup) / a.0, lastlineup));
+        }
+
+        if possibilities.len() == 0 { continue; }
         possibilities.sort_by_key(|(a, b)| (*a as i64) * 3 + (*b as i64));
-        println!("{:?}", possibilities);
         tokens += possibilities[0].0 as u64 * 3 + possibilities[0].1 as u64;
     }
 
