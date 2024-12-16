@@ -1,10 +1,12 @@
+use num::{Unsigned, FromPrimitive, ToPrimitive};
+
 #[derive(PartialEq)]
 pub enum Orientation {
     Vertical,
     Horizontal
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Debug)]
 pub enum Direction {
     Top,
     Right,
@@ -30,8 +32,18 @@ impl Direction {
         }
     }
 
-    pub fn from_positions(from: (u16, u16), to: (u16, u16)) -> Option<Direction> {
-        Direction::from_derivative((to.0 as i32 - from.0 as i32, to.1 as i32 - from.1 as i32))
+    pub fn from_positions<T : Unsigned + Into<i32>>(from: (T, T), to: (T, T)) -> Option<Direction> {
+        Direction::from_derivative((to.0.into() - from.0.into(), to.1.into() - from.1.into()))
+    }
+
+    pub fn from_char(c: char) -> Direction {
+        match c {
+            '^' => Direction::Top,
+            '>' => Direction::Right,
+            'v' => Direction::Bottom,
+            '<' => Direction::Left,
+            _ => panic!("Invalid direction char given")
+        }
     }
 
     pub fn turn_left(&self) -> Direction {
@@ -59,15 +71,15 @@ impl Direction {
         }
     }
 
-    pub fn step(&self, position: (u16, u16)) -> Option<(u16, u16)> {
-        if (position.0 == 0 && *self == Direction::Left) || (position.1 == 0 && *self == Direction::Top) { return None; }
+    pub fn step<T: Unsigned + PartialEq + ToPrimitive + FromPrimitive>(&self, position: (T, T)) -> Option<(T, T)> {
+        if (position.0 == T::zero() && *self == Direction::Left) || (position.1 == T::zero() && *self == Direction::Top) { return None; }
         let dir = self.to_derivative();
-        Some(((position.0 as i32 + dir.0) as u16, (position.1 as i32 + dir.1) as u16))
+        Some((T::from_i32(position.0.to_i32()? + dir.0)?, T::from_i32(position.1.to_i32()? + dir.1)?))
     }
 
-    pub fn sort(&self, positions: &mut Vec<(u16, u16)>) {
+    pub fn sort<T: Unsigned + ToPrimitive>(&self, positions: &mut Vec<(T, T)>) {
         let factors = self.to_derivative();
-        positions.sort_by_key(|a| a.0 as i32 * factors.0 + a.1 as i32 * factors.1);
+        positions.sort_by_key(|a| a.0.to_i32().expect("Int conversion failed") * factors.0 + a.1.to_i32().expect("Int conversion failed") * factors.1);
     }
 
     pub fn orientation(&self) -> Orientation {
