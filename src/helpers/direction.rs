@@ -1,12 +1,12 @@
 use num::{Unsigned, FromPrimitive, ToPrimitive};
 
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq, Debug, Hash, Clone)]
 pub enum Orientation {
     Vertical,
     Horizontal
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Eq, PartialEq, Debug, Hash, Clone)]
 pub enum Direction {
     Top,
     Right,
