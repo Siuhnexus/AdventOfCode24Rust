@@ -6,7 +6,7 @@ pub enum Orientation {
     Horizontal
 }
 
-#[derive(Eq, PartialEq, Debug, Hash, Clone)]
+#[derive(Eq, PartialEq, Debug, Hash, Clone, Copy)]
 pub enum Direction {
     Top,
     Right,
@@ -89,5 +89,15 @@ impl Direction {
             Direction::Bottom => Orientation::Vertical,
             Direction::Left => Orientation::Horizontal,
         }
+    }
+}
+
+impl IntoIterator for Direction {
+    type Item = Direction;
+
+    type IntoIter = std::vec::IntoIter<Direction>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        vec![self.clone(), self.turn_right(), self.turn_right().turn_right(), self.turn_left()].into_iter()
     }
 }
