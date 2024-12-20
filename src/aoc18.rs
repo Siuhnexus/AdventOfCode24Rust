@@ -29,7 +29,7 @@ fn makegrid(bytes: &[(usize, usize)], bounds: (usize, usize)) -> Vec<Vec<bool>> 
 }
 
 fn dijkstra(grid: &Vec<Vec<bool>>, bounds: (usize, usize), distances: &mut HashMap<(usize, usize), u32>) -> u32 {
-    let mut nodes: HashSet<(usize, usize)> = grid.iter().enumerate().flat_map(|(x, col)| col.iter().enumerate().filter(|(y, v)| **v).map(|(y, _)| (x, y)).collect::<Vec<_>>()).collect();
+    let mut nodes: HashSet<(usize, usize)> = grid.iter().enumerate().flat_map(|(x, col)| col.iter().enumerate().filter(|(_, v)| **v).map(|(y, _)| (x, y)).collect::<Vec<_>>()).collect();
     while nodes.len() > 0 {
         let temp = match distances.iter().filter(|(node, _)| nodes.contains(*node)).min_by_key(|(_, d)| **d) { None => return u32::MAX, Some(v) => v };
         let (nnode, dist) = (*temp.0, *temp.1);
@@ -60,8 +60,8 @@ pub fn part1() {
 pub fn part2() {
     let bytes = parse();
     let bounds = (71, 71);
-    let mut grid = makegrid(&bytes[..2800], bounds);
-    let mut i = 2800;
+    let mut grid = makegrid(&bytes[..1024], bounds);
+    let mut i = 1024;
     while i < bytes.len() {
         println!("{i}");
         let current = bytes[i];
