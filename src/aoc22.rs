@@ -162,5 +162,5 @@ pub fn part2() {
             recorded.insert(seq.clone());
         }
     }
-    println!("{}", values.iter().map(|(k, v)| *v).max().unwrap());
+    println!("{}", values.iter().map(|(_, v)| *v).max().unwrap());
 }
