@@ -21,4 +21,5 @@ pub mod aoc20;
 pub mod aoc21;
 pub mod aoc22;
 pub mod aoc23;
+pub mod aoc24;
 pub mod helpers;

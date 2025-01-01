@@ -1,8 +1,10 @@
 mod direction;
 mod wrapped;
+mod set;
 
 pub use direction::*;
 pub use wrapped::*;
+pub use set::*;
 
 pub fn gcd(mut a: u64, mut b: u64) -> u64 {
     if b == 0 { return a }

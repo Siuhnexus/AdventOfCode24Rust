@@ -1,3 +1,3 @@
 fn main() {
-    aoc24rust::aoc23::part2();
+    aoc24rust::aoc24::part2();
 }
