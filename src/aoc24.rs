@@ -264,10 +264,8 @@ pub fn part2() {
     }
 
     let remainder = target_rules.get((String::from("z") + &format!("{:02}", input_size)).as_str()).unwrap();
-    let (newrules, mut result) = collect_faultys(&mut move |pivot, tr, r, memo| is_carryover(input_size - 1, pivot, tr, r, memo), remainder, &target_rules, &rules, &mut memo);
+    let (_, mut result) = collect_faultys(&mut move |pivot, tr, r, memo| is_carryover(input_size - 1, pivot, tr, r, memo), remainder, &target_rules, &rules, &mut memo);
     faulty.append(&mut result);
-    rules = newrules;
-    target_rules = rules_by_target(&rules);
 
     faulty.sort();
     println!("{}", faulty.join(","));
