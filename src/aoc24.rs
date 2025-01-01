@@ -116,7 +116,6 @@ fn make_atomic_rule(place: usize, op: DecisionOperation) -> DecisionRule {
 }
 
 fn is_atomic_sum(place: usize, pivot: &DecisionRule) -> RuleMatch {
-    println!("Gets here {pivot:?}");
     match pivot.equation_equals(&make_atomic_rule(place, DecisionOperation::XOR)) {
         true => RuleMatch::Ok,
         false => RuleMatch::None
@@ -219,7 +218,6 @@ fn collect_faultys<'a, 'b: 'a>(matcher: &mut Derived<'a>, pivot: &'a DecisionRul
             swap_faulty(&rule, &replacement, &mut faulty, &mut replacements);
         },
         RuleMatch::None => {
-            println!("{:?}", memo);
             let betterfit = rules.iter().find(|rule| matcher(rule, target_rules, rules, memo) != RuleMatch::None).unwrap();
             swap_faulty(pivot, betterfit, &mut faulty, &mut replacements);
             if let RuleMatch::Faulty(rule, replacement) = matcher(betterfit, target_rules, rules, memo) {
@@ -256,9 +254,6 @@ pub fn part2() {
     let mut memo = HashMap::new();
     let mut faulty = Vec::new();
 
-    /*let remainder = target_rules.get((String::from("z") + &format!("{:02}", input_size)).as_str()).unwrap();
-    faulty.append(&mut collect_faultys(&mut move |pivot, tr, r, memo| is_carryover(input_size - 1, pivot, tr, r, memo), remainder, &target_rules, &rules, &mut memo));*/
-
     for i in 0..input_size {
         println!("{i}");
         let place_rule = target_rules.get((String::from("z") + &format!("{:02}", i)).as_str()).unwrap();
@@ -267,6 +262,12 @@ pub fn part2() {
         rules = newrules;
         target_rules = rules_by_target(&rules);
     }
+
+    let remainder = target_rules.get((String::from("z") + &format!("{:02}", input_size)).as_str()).unwrap();
+    let (newrules, mut result) = collect_faultys(&mut move |pivot, tr, r, memo| is_carryover(input_size - 1, pivot, tr, r, memo), remainder, &target_rules, &rules, &mut memo);
+    faulty.append(&mut result);
+    rules = newrules;
+    target_rules = rules_by_target(&rules);
 
     faulty.sort();
     println!("{}", faulty.join(","));
