@@ -6,7 +6,7 @@ pub enum DecisionOperation {
     OR,
     XOR
 }
-#[derive(Debug, Clone, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DecisionRule {
     a: String,
     b: String,
@@ -40,10 +40,7 @@ impl DecisionRule {
         }
         return false;
     }
-}
-
-impl PartialEq for DecisionRule {
-    fn eq(&self, other: &Self) -> bool {
+    pub fn equation_equals(&self, other: &Self) -> bool {
         (self.a == other.a && self.b == other.b) || (self.a == other.b && self.b == other.a) && self.operation == other.operation
     }
 }
@@ -107,9 +104,9 @@ pub fn part1() {
 }
 
 #[derive(Clone, Debug, PartialEq)]
-enum RuleMatch<'a> {
+enum RuleMatch {
     Ok,
-    Faulty(&'a DecisionRule, &'a DecisionRule),
+    Faulty(DecisionRule, DecisionRule),
     None
 }
 
@@ -119,22 +116,23 @@ fn make_atomic_rule(place: usize, op: DecisionOperation) -> DecisionRule {
 }
 
 fn is_atomic_sum(place: usize, pivot: &DecisionRule) -> RuleMatch {
-    match *pivot == make_atomic_rule(place, DecisionOperation::XOR) {
+    println!("Gets here {pivot:?}");
+    match pivot.equation_equals(&make_atomic_rule(place, DecisionOperation::XOR)) {
         true => RuleMatch::Ok,
         false => RuleMatch::None
     }
 }
 fn is_atomic_carryover(place: usize, pivot: &DecisionRule) -> RuleMatch {
-    match *pivot == make_atomic_rule(place, DecisionOperation::AND) {
+    match pivot.equation_equals(&make_atomic_rule(place, DecisionOperation::AND)) {
         true => RuleMatch::Ok,
         false => RuleMatch::None
     }
 }
 
-type Atomic<'a> = dyn Fn(&'a DecisionRule) -> RuleMatch<'a>;
-type Derived<'a> = dyn FnMut(&'a DecisionRule, &HashMap<&str, &'a DecisionRule>, &'a Vec<DecisionRule>, &mut HashMap<(usize, &'a DecisionRule), RuleMatch<'a>>) -> RuleMatch<'a>;
+type Atomic = dyn Fn(&DecisionRule) -> RuleMatch;
+type Derived<'a> = dyn FnMut(&'a DecisionRule, &'a HashMap<&str, &DecisionRule>, &'a Vec<DecisionRule>, &mut HashMap<(usize, DecisionRule), RuleMatch>) -> RuleMatch;
 
-fn match_derived<'a>(atomic: &Atomic<'a>, derived: &mut Derived<'a>, pivot: &'a DecisionRule, target_rules: &HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, &'a DecisionRule), RuleMatch<'a>>) -> RuleMatch<'a> {
+fn match_derived<'a>(atomic: &Atomic, derived: &mut Derived<'a>, pivot: &'a DecisionRule, target_rules: &'a HashMap<&str, &DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, DecisionRule), RuleMatch>) -> RuleMatch {
     let (mut firstmatch, mut secondmatch) = (RuleMatch::None, RuleMatch::None);
     if let Some(a) = target_rules.get(pivot.a.as_str()) { firstmatch = atomic(a); }
     if let Some(b) = target_rules.get(pivot.b.as_str()) { secondmatch = atomic(b); }
@@ -157,7 +155,7 @@ fn match_derived<'a>(atomic: &Atomic<'a>, derived: &mut Derived<'a>, pivot: &'a 
             let replacement = rules.iter().find(|rule| atomic(rule) == RuleMatch::Ok);
             match replacement {
                 None => return RuleMatch::None,
-                Some(v) => return RuleMatch::Faulty(target_rules.get(left).unwrap(), v)
+                Some(v) => return RuleMatch::Faulty((*target_rules.get(left).unwrap()).clone(), v.clone())
             }
         },
         (RuleMatch::Ok, _) => {
@@ -175,54 +173,75 @@ fn match_derived<'a>(atomic: &Atomic<'a>, derived: &mut Derived<'a>, pivot: &'a 
             let replacement = rules.iter().find(|rule| derived(rule, target_rules, rules, memo) == RuleMatch::Ok);
             match replacement {
                 None => return RuleMatch::None,
-                Some(v) => return RuleMatch::Faulty(target_rules.get(left).unwrap(), v)
+                Some(v) => return RuleMatch::Faulty((*target_rules.get(left).unwrap()).clone(), v.clone())
             }
         },
         Some(v) => return v
     }
 }
 
-fn is_snowball<'a>(place: usize, pivot: &'a DecisionRule, target_rules: &HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, &'a DecisionRule), RuleMatch<'a>>) -> RuleMatch<'a> {
+fn is_snowball<'a>(place: usize, pivot: &'a DecisionRule, target_rules: &'a HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, DecisionRule), RuleMatch>) -> RuleMatch {
     if pivot.operation != DecisionOperation::AND { return RuleMatch::None; }
     match_derived(&move |pivot| is_atomic_sum(place, pivot), &mut move |pivot, tr, r, memo| is_carryover(place - 1, pivot, tr, r, memo), pivot, target_rules, rules, memo)
 }
-fn is_carryover<'a>(place: usize, pivot: &'a DecisionRule, target_rules: &HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, &'a DecisionRule), RuleMatch<'a>>) -> RuleMatch<'a> {
-    if memo.contains_key(&(place, pivot)) { return memo.get(&(place, pivot)).unwrap().clone(); }
-    if place == 0 { let result = is_atomic_carryover(0, pivot); memo.insert((place, pivot), result.clone()); return result; }
-    if pivot.operation != DecisionOperation::OR { memo.insert((place, pivot), RuleMatch::None); return RuleMatch::None; }
+fn is_carryover<'a>(place: usize, pivot: &'a DecisionRule, target_rules: &'a HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, DecisionRule), RuleMatch>) -> RuleMatch {
+    let key = (place, pivot.clone());
+    if memo.contains_key(&key) { return memo.get(&key).unwrap().clone(); }
+    if place == 0 { let result = is_atomic_carryover(0, pivot); memo.insert((place, pivot.clone()), result.clone()); return result; }
+    if pivot.operation != DecisionOperation::OR { memo.insert((place, pivot.clone()), RuleMatch::None); return RuleMatch::None; }
     let result = match_derived(&move |pivot| is_atomic_carryover(place, pivot), &mut move |pivot, tr, r, memo| is_snowball(place, pivot, tr, r, memo), pivot, target_rules, rules, memo);
-    memo.insert((place, pivot), result.clone());
+    memo.insert((place, pivot.clone()), result.clone());
     result
 }
-fn is_sum<'a>(place: usize, pivot: &'a DecisionRule, target_rules: &HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, &'a DecisionRule), RuleMatch<'a>>) -> RuleMatch<'a> {
+fn is_sum<'a>(place: usize, pivot: &'a DecisionRule, target_rules: &'a HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, DecisionRule), RuleMatch>) -> RuleMatch {
     if place == 0 { return is_atomic_sum(0, pivot) }
     if pivot.operation != DecisionOperation::XOR { return RuleMatch::None; }
     match_derived(&move |pivot| is_atomic_sum(place, pivot), &mut move |pivot, tr, r, memo| is_carryover(place - 1, pivot, tr, r, memo), pivot, target_rules, rules, memo)
 }
 
-fn collect_faultys<'a>(matcher: &mut Derived<'a>, pivot: &'a DecisionRule, target_rules: &HashMap<&str, &'a DecisionRule>, rules: &'a Vec<DecisionRule>, memo: &mut HashMap<(usize, &'a DecisionRule), RuleMatch<'a>>) -> Vec<&'a str> {
+fn swap_faulty(first: &DecisionRule, second: &DecisionRule, faulty: &mut Vec<DecisionRule>, replacements: &mut Vec<DecisionRule>) {
+    let mut newfirst = first.clone();
+    newfirst.result = second.result.clone();
+    let mut newsecond = second.clone();
+    newsecond.result = first.result.clone();
+    faulty.push(first.clone());
+    faulty.push(second.clone());
+    replacements.push(newfirst);
+    replacements.push(newsecond);
+}
+
+fn collect_faultys<'a, 'b: 'a>(matcher: &mut Derived<'a>, pivot: &'a DecisionRule, target_rules: &'a HashMap<&str, &'a DecisionRule>, rules: &'b Vec<DecisionRule>, memo: &mut HashMap<(usize, DecisionRule), RuleMatch>) -> (Vec<DecisionRule>, Vec<String>) {
     let mut faulty = Vec::new();
-    match matcher(pivot, &target_rules, &rules, memo) {
+    let mut replacements = Vec::new();
+    match matcher(pivot, target_rules, rules, memo) {
         RuleMatch::Ok => {},
         RuleMatch::Faulty(rule, replacement) => {
-            faulty.push(rule.result.as_str());
-            faulty.push(replacement.result.as_str());
+            swap_faulty(&rule, &replacement, &mut faulty, &mut replacements);
         },
         RuleMatch::None => {
-            println!("{:?}", memo.iter().filter(|((_, rule), v)| **v != RuleMatch::None && **v != RuleMatch::Ok && !rule.a.contains(|c| c == 'x' || c == 'y') && !rule.b.contains(|c| c == 'x' || c == 'y')).collect::<Vec<_>>());
-            let betterfit = rules.iter().find(|rule| matcher(rule, &target_rules, &rules, memo) != RuleMatch::None).unwrap();
-            faulty.push(pivot.result.as_str());
-            faulty.push(betterfit.result.as_str());
-            if let RuleMatch::Faulty(rule, replacement) = matcher(betterfit, &target_rules, &rules, memo) {
-                faulty.push(rule.result.as_str());
-                faulty.push(replacement.result.as_str());
+            println!("{:?}", memo);
+            let betterfit = rules.iter().find(|rule| matcher(rule, target_rules, rules, memo) != RuleMatch::None).unwrap();
+            swap_faulty(pivot, betterfit, &mut faulty, &mut replacements);
+            if let RuleMatch::Faulty(rule, replacement) = matcher(betterfit, target_rules, rules, memo) {
+                swap_faulty(&rule, &replacement, &mut faulty, &mut replacements);
             }
         },
     }
-    faulty
+    let mut result = Vec::new();
+    let mut newrules = Vec::new();
+    for i in (0..rules.len()).rev() {
+        if !faulty.contains(&rules[i]) {
+            newrules.push(rules[i].clone());
+        }
+    }
+    for replacement in replacements {
+        result.push(replacement.result.clone());
+        newrules.push(replacement);
+    }
+    (newrules, result)
 }
 
-fn rules_by_target(rules: &Vec<DecisionRule>) -> HashMap<&str, &DecisionRule> {
+fn rules_by_target<'a>(rules: &'a Vec<DecisionRule>) -> HashMap<&'a str, &'a DecisionRule> {
     let mut result = HashMap::new();
     for rule in rules {
         result.insert(rule.result.as_str(), rule);
@@ -231,8 +250,8 @@ fn rules_by_target(rules: &Vec<DecisionRule>) -> HashMap<&str, &DecisionRule> {
 }
 
 pub fn part2() {
-    let (vars, rules) = parse();
-    let target_rules = rules_by_target(&rules);
+    let (vars, mut rules) = parse();
+    let mut target_rules = rules_by_target(&rules);
     let input_size = vars.iter().filter(|(k, _)| k.starts_with("x") || k.starts_with("y")).count() / 2;
     let mut memo = HashMap::new();
     let mut faulty = Vec::new();
@@ -243,7 +262,10 @@ pub fn part2() {
     for i in 0..input_size {
         println!("{i}");
         let place_rule = target_rules.get((String::from("z") + &format!("{:02}", i)).as_str()).unwrap();
-        faulty.append(&mut collect_faultys(&mut move |pivot, tr, r, memo| is_sum(i, pivot, tr, r, memo), place_rule, &target_rules, &rules, &mut memo));
+        let (newrules, mut result) = collect_faultys(&mut move |pivot, tr, r, memo| is_sum(i, pivot, tr, r, memo), place_rule, &target_rules, &rules, &mut memo);
+        faulty.append(&mut result);
+        rules = newrules;
+        target_rules = rules_by_target(&rules);
     }
 
     faulty.sort();
